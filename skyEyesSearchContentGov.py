@@ -10,10 +10,9 @@ from bs4 import BeautifulSoup
 import re
 import codecs
 import dataBaseTools
-import skyEyesSearchContentGov
 
 
-class skyEyesSearchContent(object):
+class skyEyesSearchContentGov(object):
 	def __init__(self,url = r'https://www.tianyancha.com/company/409253885' ):
 		self.BASE_URL = url
 		self.headers = {'User-Agent':'Mozilla/5.0 (Windows NT 10.0; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/55.0.2883.87 Safari/537.36',
@@ -39,7 +38,7 @@ class skyEyesSearchContent(object):
 		#print(str(data.content,'utf-8'))
 		return dataContent
 
-	#传入页面，筛选普通公司，非事业单位
+	#传入页面，筛选事业单位
 	def getContentContent(self,dataContent):
 		#初始化SOUP实例对象
 		soup = BeautifulSoup(dataContent,'lxml')
@@ -47,51 +46,29 @@ class skyEyesSearchContent(object):
 		div_cname = soup.find('div',attrs={'class':'header'}).h1.get_text()
 		print(div_cname)
 		#选出联系电话
-		temp = soup.find('div',attrs={'class':'detail'})
-		div_f0 = temp.find('div',attrs={'class':'f0'})
-		div_inblock = div_f0.find('div',attrs={'class':'in-block'})
-		#print(div_inblock)
-		if div_inblock.find('script',attrs={'type':'text/html'}) != None :
-			div_tel = div_inblock.find('script',attrs={'type':'text/html'}).get_text()[2:-2]
-		else:
-			div_tel = 0
+		div_tel = " "
 		print(div_tel)
-		div_temp1 = soup.find('div',attrs={'class':'block-data'}).find('table',attrs={'class':'table'})
-		if div_temp1.find('div',attrs={'class':'name'}) != None:
-			#选出公司法人
-			div_lawer = div_temp1.find('div',attrs={'class':'name'}).get_text()
-		else:
-			div_lawer = 0
+		#选出公司法人
+		div_table = soup.find('div',attrs={'class':'block-data'}).find('table',attrs={'class':'table'})
+		div_lawer = div_table.find('tbody').find('tr').find('td').get_text()
 		print(div_lawer)
 		#选出统一信用代码
-		div_temp2 = soup.find('div',attrs={'class':'block-data'}).find('table',attrs={'class':'table -striped-col -border-top-none'})
-		if div_temp2 != None:
-			div_tbody = div_temp2.find('tbody').find('tr').next_sibling
-			div_code = div_tbody.find('td').next_sibling.get_text()
-		else:
-			div_code = 0
+		div_table2 = soup.find('div',attrs={'class':'block-data'}).find('table',attrs={'class':'table -striped-col'})
+		div_code = div_table2.find('tbody').find('tr').find('td').next_sibling.next_sibling.next_sibling.get_text()
 		print(div_code)
 		#选出地址
-		if div_temp2 != None:
-			div_tbody2 = div_temp2.find('tbody').find('tr').next_sibling.next_sibling.next_sibling.next_sibling.next_sibling.next_sibling.next_sibling
-			div_address = div_tbody2.find('td',attrs={'colspan':4}).get_text().replace('附近公司','')
-		else:
-			div_address = 0
+		div_address = div_table2.find('tbody').find('tr').next_sibling.next_sibling.find('td').next_sibling.get_text()
 		print(div_address)
-		if div_tel ==div_lawer==div_code==div_address==0:
-			spider = skyEyesSearchContentGov.skyEyesSearchContentGov(self.BASE_URL)
-			spider.getContentContent(spider.getPage())
-		else:
-			#保存到数据库
-			insert_str =  "INSERT INTO "+self.tabelName+"(name,lawer,codeNum,telphone,address) VALUES('%s','%s','%s','%s','%s')"%(div_cname,div_lawer,div_code,div_tel,div_address)
-			self.dbTool.execute_insert(insert_str)
+		#保存到数据库
+		insert_str =  "INSERT INTO "+self.tabelName+"(name,lawer,codeNum,telphone,address) VALUES('%s','%s','%s','%s','%s')"%(div_cname,div_lawer,div_code,div_tel,div_address)
+		self.dbTool.execute_insert(insert_str)
 	
 
 
 
 
 def main():
-	spider = skyEyesSearchContent(r'https://www.tianyancha.com/company/409253885')
+	spider = skyEyesSearchContentGov(r'https://www.tianyancha.com/company/3097060877')
 	spider.getContentContent(spider.getPage())
 	#getPage(BASE_URL)
 
